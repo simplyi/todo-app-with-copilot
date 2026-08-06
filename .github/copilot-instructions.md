@@ -11,7 +11,7 @@
   - `service`: business rules and orchestration
   - `repository`: persistence/data access
   - `model`/`entity`: domain and persistence models
-  - `dto`: API input/output payloads
+  - `dto`: API input/output payloads, preferably as immutable Java `record` classes when appropriate
   - `config`: framework and application configuration
 - Keep controllers thin; put non-trivial logic in services.
 - Avoid circular dependencies between layers.
