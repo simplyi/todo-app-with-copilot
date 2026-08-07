@@ -36,6 +36,11 @@ public class RegistrationController {
             return "registration";
         }
 
+        if (userService.emailExists(dto.email())) {
+            result.rejectValue("email", "email.exists", "An account with this email address already exists");
+            return "registration";
+        }
+
         userService.register(dto);
         return "redirect:/registration?success";
     }

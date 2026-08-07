@@ -82,4 +82,19 @@ class RegistrationControllerTest {
                 .andExpect(view().name("registration"))
                 .andExpect(model().attributeHasFieldErrors("user", "email"));
     }
+
+    @Test
+    void registerUser_withDuplicateEmail_returnsRegistrationViewWithEmailError() throws Exception {
+        org.mockito.Mockito.when(userService.emailExists("john@example.com")).thenReturn(true);
+
+        mockMvc.perform(post("/registration").with(csrf())
+                        .param("firstName", "John")
+                        .param("lastName", "Doe")
+                        .param("email", "john@example.com")
+                        .param("password", "password123")
+                        .param("confirmPassword", "password123"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("registration"))
+                .andExpect(model().attributeHasFieldErrors("user", "email"));
+    }
 }

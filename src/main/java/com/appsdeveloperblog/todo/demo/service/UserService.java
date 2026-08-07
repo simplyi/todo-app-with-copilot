@@ -17,6 +17,10 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public boolean emailExists(final String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
     public User register(final UserRegistrationDto dto) {
         final User user = new User();
         user.setFirstName(dto.firstName());
