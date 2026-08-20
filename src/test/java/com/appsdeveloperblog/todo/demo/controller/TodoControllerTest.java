@@ -8,10 +8,12 @@ import com.appsdeveloperblog.todo.demo.service.TodoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -37,14 +39,15 @@ class TodoControllerTest {
     @MockitoBean
     private CustomUserDetailsService customUserDetailsService;
 
+    private final Principal principal = () -> "john@example.com";
+
     @Test
-    @WithMockUser(username = "john@example.com")
     void getTodos_returnsCurrentUsersTodos() throws Exception {
         when(todoService.getTodos("john@example.com")).thenReturn(List.of(
                 new TodoResponse(1L, "First", false, LocalDate.of(2026, 8, 21))
         ));
 
-        mockMvc.perform(get("/api/todos"))
+        mockMvc.perform(get("/api/todos").principal(principal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].title").value("First"));
@@ -53,7 +56,31 @@ class TodoControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "john@example.com")
+    void getTodo_returnsCurrentUsersTodo() throws Exception {
+        when(todoService.getTodo("john@example.com", 1L)).thenReturn(
+                new TodoResponse(1L, "First", false, LocalDate.of(2026, 8, 21))
+        );
+
+        mockMvc.perform(get("/api/todos/1").principal(principal))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("First"));
+
+        verify(todoService).getTodo("john@example.com", 1L);
+    }
+
+    @Test
+    void getTodo_withUnknownId_returnsNotFound() throws Exception {
+        when(todoService.getTodo("john@example.com", 99L))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Todo not found"));
+
+        mockMvc.perform(get("/api/todos/99").principal(principal))
+                .andExpect(status().isNotFound());
+
+        verify(todoService).getTodo("john@example.com", 99L);
+    }
+
+    @Test
     void createTodo_returnsCreatedTodo() throws Exception {
         final CreateTodoRequest request = new CreateTodoRequest("Buy milk", LocalDate.of(2026, 8, 30));
         when(todoService.createTodo("john@example.com", request)).thenReturn(
@@ -61,6 +88,7 @@ class TodoControllerTest {
         );
 
         mockMvc.perform(post("/api/todos")
+                        .principal(principal)
                         .with(csrf())
                         .contentType("application/json")
                         .content("{\"title\":\"Buy milk\",\"dueDate\":\"2026-08-30\"}"))
@@ -72,7 +100,6 @@ class TodoControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "john@example.com")
     void updateTodo_returnsUpdatedTodo() throws Exception {
         final UpdateTodoRequest request = new UpdateTodoRequest("Buy milk", true, LocalDate.of(2026, 8, 30));
         when(todoService.updateTodo("john@example.com", 2L, request)).thenReturn(
@@ -80,6 +107,7 @@ class TodoControllerTest {
         );
 
         mockMvc.perform(put("/api/todos/2")
+                        .principal(principal)
                         .with(csrf())
                         .contentType("application/json")
                         .content("{\"title\":\"Buy milk\",\"completed\":true,\"dueDate\":\"2026-08-30\"}"))
@@ -90,9 +118,9 @@ class TodoControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "john@example.com")
     void deleteTodo_returnsNoContent() throws Exception {
         mockMvc.perform(delete("/api/todos/2")
+                        .principal(principal)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
 
