@@ -2,9 +2,9 @@ package com.appsdeveloperblog.todo.demo.controller;
 
 import com.appsdeveloperblog.todo.demo.dto.CreateTodoDto;
 import com.appsdeveloperblog.todo.demo.dto.TodoResponseDto;
+import com.appsdeveloperblog.todo.demo.dto.UpdateTodoDto;
 import com.appsdeveloperblog.todo.demo.service.TodoService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -48,7 +47,7 @@ public class TodoController {
     public TodoResponseDto updateTodo(
             final Principal principal,
             @PathVariable final Long id,
-            @Valid @RequestBody final UpdateTodoRequest dto) {
+            @Valid @RequestBody final UpdateTodoDto dto) {
         return todoService.updateTodo(principal.getName(), id, dto.title(), dto.dueDate(), dto.completed());
     }
 
@@ -56,16 +55,5 @@ public class TodoController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTodo(final Principal principal, @PathVariable final Long id) {
         todoService.deleteTodo(principal.getName(), id);
-    }
-
-    private record UpdateTodoRequest(
-
-            @NotBlank(message = "Title is required")
-            String title,
-
-            LocalDate dueDate,
-
-            boolean completed
-    ) {
     }
 }
